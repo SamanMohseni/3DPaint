@@ -6,9 +6,16 @@
 #include <util/setbaud.h>
 #include <avr/interrupt.h>
 
-volatile uint8_t photocell_number, photocell[3] = {PC0, PC1, PC2}, extra_bits, next_byte, shift[3] = {1, 4, 16}, first_time;
+#define true 1
+#define false 0
 
-static inline void initUSART(void) {                          
+#define SW_PORT PORTD
+#define SW_PIN PIND
+volatile uint8_t sw = PD2;
+volatile uint8_t photocell_number, photocell[3] = {PC0, PC1, PC2}, extra_bits, next_byte, shift[3] = {0, 2, 4}, first_time;
+
+
+static inline void initUSART(void) {
 	UBRR0H = UBRRH_VALUE;                        /* defined in setbaud.h */
 	UBRR0L = UBRRL_VALUE;
 	#if USE_2X
@@ -42,7 +49,7 @@ static inline void initTimer1(void) {
 ISR(USART_TX_vect){
 	if(photocell_number < 4){
 		if(photocell_number == 3){
-			UDR0 = extra_bits;                                     /* send data */
+			UDR0 = extra_bits & (((SW_PIN >> sw) & 1) << 7);   /* send extra_bits with switch data included */
 			photocell_number++;
 		}
 		else{
@@ -61,7 +68,7 @@ ISR(USART_TX_vect){
 
 ISR(ADC_vect){
 	next_byte = ADCL;
-	extra_bits += (ADCH % 4) * shift[photocell_number];
+	extra_bits |= (ADCH % 4) << shift[photocell_number];
 	if(first_time){
 		UDR0 = next_byte;                                     /* send data */
 		photocell_number++;
@@ -71,7 +78,7 @@ ISR(ADC_vect){
 	}
 }
 
-ISR(TIMER1_COMPA_vect) {    
+ISR(TIMER1_COMPA_vect) {
 	photocell_number = 0;
 	extra_bits = 0;
 	first_time = true;
@@ -83,6 +90,7 @@ ISR(TIMER1_COMPA_vect) {
 #define start_command 's'
 int main(void) {
 	clock_prescale_set(clock_div_1);
+	SW_PORT |= (1 << sw); /* set pullup resistor on our switch */
 	initUSART();
 	initADC();
 	initTimer1();
