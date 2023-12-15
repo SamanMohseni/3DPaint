@@ -6,6 +6,7 @@ The GIF below demonstrates the 3DPaint system in action.
 As can be seen by the reflection of the lightbulb on the screen, I'm drawing a spiral by moving the lightbulb. The software captures the lightbulb's 3D position and instantly draws it onscreen.
 
 ![3DPaint](https://github.com/SamanMohseni/3DPaint/assets/51726090/b1be975c-c152-4c2e-94a0-97bce05ebb91)
+
 *A demo of 3D paint*
 
 ## The 3D drawing tool
